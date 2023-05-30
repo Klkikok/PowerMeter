@@ -32,6 +32,8 @@ int analogPin2 = 2;
 unsigned int reload = 0x5DB;
 volatile int mux = 0;
 int readPins[] = {0, 1, 2};
+int phase = 1;
+int packetId = 0;
 
 
 void setup() {
@@ -45,6 +47,24 @@ void setup() {
   TIMSK1 = (1<<OCIE1A);
   sei();
 }
+
+#define MAGIC 0xBABADEDA
+
+struct sample_packet
+{
+	uint32_t magic;
+	uint32_t id;
+	uint16_t val_array[3];
+	uint8_t err;
+
+};
+
+volatile sample_packet pack = {
+	.magic = MAGIC,
+	.id = 0,
+	.val_array = {0},
+	.err = 0
+};
 
 void loop() {
   // put your main code here, to run repeatedly:
@@ -70,19 +90,30 @@ void loop() {
 
 ISR(TIMER1_COMPA_vect)
 {
-  if(mux > 2)
+  if(phase == 1)
   {
-    mux = 0;
+    if(mux > 2)
+    {
+      mux = 0;
+      phase = 2;
+    }
+
+    int pin = readPins[mux];
+    pack.id = packetId;
+    int readValue = analogRead(pin);
+    float voltage = readValue * (5.0 / 1024.0);
+    pack.val_array[mux] = voltage;
+
+    mux++;
   }
-
-  int pin = readPins[mux];
-  int readValue = analogRead(pin);
-  float voltage = readValue * (5.0 / 1024.0);
-
-  Serial.print("Pin: ");
-  Serial.print(pin);
-  Serial.print(" Voltage: ");
-  Serial.println(voltage);
-  mux++;
+  if(phase == 2)
+  {
+    Serial.print("Packed no:");
+    Serial.println(packetId);
+    Serial.write((byte *)&pack, sizeof(sample_packet));
+    phase = 1;
+    packetId++;
+  }
+  
 
 }
