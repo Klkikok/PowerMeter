@@ -26,9 +26,12 @@
 #define TWI_vect _VECTOR(24) /* Two-wire Serial Interface */
 #define SPM_READY_vect _VECTOR(25) /* Store Program Memory Read */
 
-int analogPin0 = 0;
-int analogPin1 = 1;
-int analogPin2 = 2;
+// int analogPin0 = 0;
+// int analogPin1 = 1;
+// int analogPin2 = 2;
+// int analogPin3 = 3;
+// int analogPin4 = 4;
+// int analogPin5 = 5;
 unsigned int reload = 0x5DB;
 volatile int mux = 0;
 int readPins[] = {0, 1, 2};
@@ -54,7 +57,7 @@ struct sample_packet
 {
 	uint32_t magic;
 	uint32_t id;
-	uint16_t val_array[3];
+	uint16_t val_array[6];
 	uint8_t err;
 
 };
@@ -70,29 +73,24 @@ void loop() {
   // put your main code here, to run repeatedly:
   while(1)
   {
-    delay(1000);
-    int pin0 = analogRead(analogPin0);
-    float voltage = pin0 * (5.0 / 1024.0);
-    // Serial.println(voltage);
-    delay(1000);
-    int pin1 = analogRead(analogPin1);
-    voltage = pin1 * (5.0 / 1024.0);
-    // Serial.println(voltage);
-    delay(1000);
-    int pin2 = analogRead(analogPin2);
-    voltage = pin2 * (5.0 / 1024.0);
-    // Serial.println(voltage);
+    // for(int i = 0; i < 6; i++)
+    // {
+    //    delay(1000);
+    //   int pin = analogRead(i);
+    //   float voltage = pin * (5.0 / 1024.0);
+    //   Serial.print("PIN: ");
+    //   Serial.print(i);
+    //   Serial.print(" Value: ");
+    //   Serial.println(pin);
+    // }
   }
-  
-
-
 }
 
 ISR(TIMER1_COMPA_vect)
 {
   if(phase == 1)
   {
-    if(mux > 2)
+    if(mux > 5)
     {
       mux = 0;
       phase = 2;
@@ -101,8 +99,8 @@ ISR(TIMER1_COMPA_vect)
     int pin = readPins[mux];
     pack.id = packetId;
     int readValue = analogRead(pin);
-    float voltage = readValue * (5.0 / 1024.0);
-    pack.val_array[mux] = voltage;
+    // float voltage = readValue * (5.0 / 1024.0);
+    pack.val_array[mux] = readValue;
 
     mux++;
   }
@@ -110,7 +108,21 @@ ISR(TIMER1_COMPA_vect)
   {
     Serial.print("Packed no:");
     Serial.println(packetId);
+    Serial.println(pack.id);
+    Serial.println(pack.val_array[0]);
+    Serial.println(pack.val_array[1]);
+    Serial.println(pack.val_array[2]);
+    Serial.println(pack.val_array[3]);
+    Serial.println(pack.val_array[4]);
+    Serial.println(pack.val_array[5]);
+
     Serial.write((byte *)&pack, sizeof(sample_packet));
+   
+    for(int i = 0; i < 6; i++)
+    {
+      pack.val_array[i] = 0;
+    }
+
     phase = 1;
     packetId++;
   }
