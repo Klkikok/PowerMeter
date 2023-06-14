@@ -1,37 +1,9 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
-#define INT0_vect _VECTOR(1) /* External Interrupt Request 0 */
-#define INT1_vect _VECTOR(2) /* External Interrupt Request 1 */
-#define PCINT0_vect _VECTOR(3) /* Pin Change Interrupt Request 0 */
-#define PCINT1_vect _VECTOR(4) /* Pin Change Interrupt Request 1 */
-#define PCINT2_vect _VECTOR(5) /* Pin Change Interrupt Request 2 */
-#define WDT_vect _VECTOR(6) /* Watchdog Time-out Interrupt */
-#define TIMER2_COMPA_vect _VECTOR(7) /* Timer/Counter2 Compare Match A */
-#define TIMER2_COMPB_vect _VECTOR(8) /* Timer/Counter2 Compare Match A */
-#define TIMER2_OVF_vect _VECTOR(9) /* Timer/Counter2 Overflow */
-#define TIMER1_CAPT_vect _VECTOR(10) /* Timer/Counter1 Capture Event */
-#define TIMER1_COMPA_vect _VECTOR(11) /* Timer/Counter1 Compare Match A */
-#define TIMER1_COMPB_vect _VECTOR(12) /* Timer/Counter1 Compare Match B */
-#define TIMER1_OVF_vect _VECTOR(13) /* Timer/Counter1 Overflow */
-#define TIMER0_COMPA_vect _VECTOR(14) /* TimerCounter0 Compare Match A */
-#define TIMER0_COMPB_vect _VECTOR(15) /* TimerCounter0 Compare Match B */
-#define TIMER0_OVF_vect _VECTOR(16) /* Timer/Couner0 Overflow */
-#define SPI_STC_vect _VECTOR(17) /* SPI Serial Transfer Complete */
-#define USART_RX_vect _VECTOR(18) /* USART Rx Complete */
-#define USART_UDRE_vect _VECTOR(19) /* USART, Data Register Empty */
-#define USART_TX_vect _VECTOR(20) /* USART Tx Complete */
-#define ADC_vect _VECTOR(21) /* ADC Conversion Complete */
-#define EE_READY_vect _VECTOR(22) /* EEPROM Ready */
-#define ANALOG_COMP_vect _VECTOR(23) /* Analog Comparator */
-#define TWI_vect _VECTOR(24) /* Two-wire Serial Interface */
-#define SPM_READY_vect _VECTOR(25) /* Store Program Memory Read */
 
-// int analogPin0 = 0;
-// int analogPin1 = 1;
-// int analogPin2 = 2;
-// int analogPin3 = 3;
-// int analogPin4 = 4;
-// int analogPin5 = 5;
+#define TIMER1_COMPA_vect _VECTOR(11) /* Timer/Counter1 Compare Match A */
+
+
 unsigned int reload = 0x5DB;
 volatile int mux = 0;
 int readPins[] = {0, 1, 2};
@@ -73,16 +45,7 @@ void loop() {
   // put your main code here, to run repeatedly:
   while(1)
   {
-    // for(int i = 0; i < 6; i++)
-    // {
-    //    delay(1000);
-    //   int pin = analogRead(i);
-    //   float voltage = pin * (5.0 / 1024.0);
-    //   Serial.print("PIN: ");
-    //   Serial.print(i);
-    //   Serial.print(" Value: ");
-    //   Serial.println(pin);
-    // }
+
   }
 }
 
@@ -99,24 +62,22 @@ ISR(TIMER1_COMPA_vect)
     int pin = readPins[mux];
     pack.id = packetId;
     int readValue = analogRead(pin);
-    // float voltage = readValue * (5.0 / 1024.0);
+    float voltage = readValue * (5.0 / 1024.0);
     pack.val_array[mux] = readValue;
 
     mux++;
   }
   if(phase == 2)
   {
-    Serial.print("Packed no:");
-    Serial.println(packetId);
-    Serial.println(pack.id);
-    Serial.println(pack.val_array[0]);
-    Serial.println(pack.val_array[1]);
-    Serial.println(pack.val_array[2]);
-    Serial.println(pack.val_array[3]);
-    Serial.println(pack.val_array[4]);
-    Serial.println(pack.val_array[5]);
+    for(int i = 2 ; i < 6 ; i++){
+      pack.val_array[i] = 0;
+    }
 
-    Serial.write((byte *)&pack, sizeof(sample_packet));
+    String line = String(pack.val_array[0]) + "," + String(pack.val_array[1]) + "," + String(pack.val_array[2]) + "," +
+                String(pack.val_array[3]) + "," + String(pack.val_array[4]) + "," + String(pack.val_array[5]);
+
+    Serial.println(line);
+       
    
     for(int i = 0; i < 6; i++)
     {
@@ -126,6 +87,4 @@ ISR(TIMER1_COMPA_vect)
     phase = 1;
     packetId++;
   }
-  
-
 }
